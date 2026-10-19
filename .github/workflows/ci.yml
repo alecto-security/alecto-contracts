@@ -1,0 +1,42 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: test + clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - name: Clippy
+        run: cargo clippy --all-targets -- -D warnings
+      - name: Test
+        run: cargo test
+
+  vectors-mirror:
+    # The normative rule, executed: these types must read the pinned
+    # evidence-bundle fixture vectors. If this job fails, the types and the
+    # standard have drifted and neither repo's release gates should pass.
+    name: vector mirror
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Pull the pinned standard
+        run: |
+          TAG=$(tr -d '[:space:]' < vectors/evidence-bundle.tag)
+          git clone --quiet --depth 1 --branch "$TAG" \
+            https://github.com/alecto-security/evidence-bundle .vectors
+      - name: Mirror test
+        run: VECTORS_DIR="$(pwd)/.vectors/fixtures" cargo test --test vectors_mirror
