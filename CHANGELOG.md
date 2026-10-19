@@ -6,6 +6,10 @@ the record-version field.
 
 ## [Unreleased]
 
+- Vector mirror pin bumped to `evidence-bundle v0.2.0`: its fixture set adds
+  the `tampered-notary-signature` and `tampered-notary-chain` negative
+  vectors, and the mirror test now covers them.
+
 ## [0.1.0] - 2026-10-19
 
 Born public, born tagged.

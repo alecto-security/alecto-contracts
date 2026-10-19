@@ -70,18 +70,25 @@ fn vector_mirror_runs_the_bundle_types_against_the_pinned_set() {
 }
 
 #[test]
-fn the_tampered_negative_vector_is_metadata_valid_but_packed_bad() {
+fn the_tampered_negative_vectors_are_metadata_valid_but_packed_bad() {
     let Some(vectors) = vectors_dir() else {
         eprintln!("skipped: VECTORS_DIR not set (run scripts/fetch_vectors.sh)");
         return;
     };
 
-    // The negative vector's metadata is intact (the tamper is in the payload
-    // bytes), so the *types* parse it: catching the tamper is the seal
-    // verifier's job, which is why separate crates exist.
-    let meta_text =
-        std::fs::read_to_string(fixture(&vectors, "tampered-original").join("metadata.json"))
-            .unwrap();
-    let meta: Metadata = serde_json::from_str(&meta_text).unwrap();
-    assert!(meta.schema_version_is_current());
+    // The negative vectors keep their metadata intact (the tamper lands in
+    // the payload bytes or inside the signed proof), so the *types* parse
+    // them: catching the tamper is the seal verifier's job, which is why
+    // separate crates exist.
+    for name in [
+        "tampered-original",
+        "tampered-notary-signature",
+        "tampered-notary-chain",
+    ] {
+        let meta_text =
+            std::fs::read_to_string(fixture(&vectors, name).join("metadata.json"))
+                .unwrap_or_else(|e| panic!("{name}: {e}"));
+        let meta: Metadata = serde_json::from_str(&meta_text).unwrap();
+        assert!(meta.schema_version_is_current(), "{name}: schema_version");
+    }
 }
